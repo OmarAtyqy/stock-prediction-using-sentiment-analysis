@@ -1,4 +1,3 @@
-from pyspark.sql import SparkSession
 from pyspark.ml.pipeline import Transformer
 from pyspark.sql.functions import col, lower, regexp_replace
 
