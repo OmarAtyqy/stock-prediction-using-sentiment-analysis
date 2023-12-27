@@ -48,11 +48,12 @@ services:
 
   kafka:
     restart: always
-    image: docker.io/bitnami/kafka:3.3
+    image: stock-prediction-kafka
     ports:
       - "9093:9093"
     volumes:
       - "kafka-volume:/bitnami"
+      - .:/mnt
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
