@@ -18,9 +18,10 @@
 
 
 from pyspark.sql import SparkSession
-from pyspark.ml.feature import MinMaxScaler, Tokenizer, Word2Vec, VectorAssembler
 from pyspark.sql.types import DoubleType, StringType, StructType, StructField
+from pyspark.ml.feature import MinMaxScaler, Tokenizer, Word2Vec, VectorAssembler
 from pyspark.ml import Pipeline
+
 from ..utils.tweet_cleaner import CleanTweetTransformer
 from ..utils.column_selector import ColumnSelector
 

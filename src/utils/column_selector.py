@@ -1,5 +1,4 @@
 from pyspark.ml import Transformer
-from pyspark.sql.functions import col
 
 
 class ColumnSelector(Transformer):
