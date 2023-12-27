@@ -1,1 +1,0 @@
-{"class":"org.apache.spark.ml.feature.VectorAssembler","timestamp":1703711331034,"sparkVersion":"3.5.0","uid":"VectorAssembler_d5e9926e7543","paramMap":{"outputCol":"features","inputCols":["EmbeddedTweet","ScaledFeatures"]},"defaultParamMap":{"outputCol":"VectorAssembler_d5e9926e7543__output","handleInvalid":"error"}}

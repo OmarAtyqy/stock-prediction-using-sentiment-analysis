@@ -17,9 +17,10 @@
 # - return the features and the target column (Close)
 
 
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType, StringType, StructType, StructField
-from pyspark.ml.feature import MinMaxScaler, Tokenizer, Word2Vec, VectorAssembler
+from pyspark.ml.feature import MinMaxScaler, Tokenizer, Word2Vec, VectorAssembler, StopWordsRemover
 from pyspark.ml import Pipeline
 
 from ..utils.tweet_cleaner import CleanTweetTransformer
@@ -48,13 +49,16 @@ schema = StructType([
 pipeline_path = "models/preprocessing_pipeline"
 final_data_path = "data/final_data"
 
-# ================================== Reading the data ============================================
-print("Reading the data...")
+# ================================== Creating the Spark session ============================================
+print("Creating the Spark session...")
 
 # Create Spark session
 spark = SparkSession.builder \
     .appName("preprocessing-pipeline") \
     .getOrCreate()
+
+# ================================== Reading the data ============================================
+print("Reading the data...")
 
 # read the data
 df = spark.read.csv("data/joined_data.csv", header=True, schema=schema)
@@ -68,23 +72,30 @@ print("Number of rows after dropping null values: {}".format(df.count()))
 # ================================== Creating the pipline ============================================
 print("Creating the pipeline...")
 
-# Initialize the custom Cleaner Transformer
+# Initialize the custom TweetCleaner transformer
 cleaner = CleanTweetTransformer(inputCol='Tweet', outputCol='CleanTweet')
 
-# Tokenize the cleaned tweets
-tokenizer = Tokenizer(inputCol='CleanTweet', outputCol='TweetTokens')
+# Initialize the tokenizer
+tokenizer = Tokenizer(inputCol='CleanTweet',
+                      outputCol='TweetTokensWithStopWords')
 
-# Embed the tweets using Word2Vec
+# Initialize the stop words remover
+stop_words_remover = StopWordsRemover(
+    inputCol='TweetTokensWithStopWords', outputCol='TweetTokens')
+
+# Initialize the Word2Vec model
 word2Vec = Word2Vec(vectorSize=100, minCount=0,
                     inputCol='TweetTokens', outputCol='EmbeddedTweet')
 
-# Scale the numerical data
+# Initialize the first vector assembler
 assembler_1 = VectorAssembler(
     inputCols=input_cols, outputCol='AssembledFeatures1')
+
+# Initialize the scaler
 scaler = MinMaxScaler(inputCol="AssembledFeatures1",
                       outputCol="ScaledFeatures")
 
-# Assemble the features into a single vector
+# Initialize the second vector assembler
 assembler_2 = VectorAssembler(
     inputCols=['EmbeddedTweet', 'ScaledFeatures'], outputCol='features')
 
@@ -92,7 +103,7 @@ assembler_2 = VectorAssembler(
 column_selector = ColumnSelector(outputCols=['features', target_col])
 
 # Create the pipeline
-pipeline = Pipeline(stages=[cleaner, tokenizer, word2Vec,
+pipeline = Pipeline(stages=[cleaner, tokenizer, stop_words_remover, word2Vec,
                             assembler_1, scaler, assembler_2, column_selector])
 
 # ================================== Running the pipeline ============================================
@@ -129,6 +140,14 @@ print("Number of rows with NaN values: {}".format(
 
 # ================================== Saving the data ============================================
 print("Saving the data and pipeline...")
+
+# check if the folders exist and remove them if they do
+if os.path.exists(pipeline_path):
+    print("Removing old pipeline...")
+    os.system("rm -rf {}".format(pipeline_path))
+if os.path.exists(final_data_path):
+    print("Removing old data...")
+    os.system("rm -rf {}".format(final_data_path))
 
 # Save the preprocessing pipeline
 # remove the tweet_cleaner and column_selector stages since they can't be saved
