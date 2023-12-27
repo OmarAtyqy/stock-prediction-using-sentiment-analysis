@@ -1,0 +1,7 @@
+yfinance
+pyspark
+kafka-python
+schedule
+pandas
+emoji
+joblib
