@@ -16,7 +16,6 @@
 # - Assemble the features (embedded tweets and scaled numerical data) into a single vector
 # - return the features and the target column (Close)
 
-
 import os
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType, StringType, StructType, StructField
@@ -25,6 +24,7 @@ from pyspark.ml import Pipeline
 
 from ..utils.tweet_cleaner import CleanTweetTransformer
 from ..utils.column_selector import ColumnSelector
+
 
 # define the target column
 target_col = 'Close'

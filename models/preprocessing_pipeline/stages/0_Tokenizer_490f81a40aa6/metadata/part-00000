@@ -1,1 +1,0 @@
-{"class":"org.apache.spark.ml.feature.Tokenizer","timestamp":1703712158767,"sparkVersion":"3.5.0","uid":"Tokenizer_490f81a40aa6","paramMap":{"inputCol":"CleanTweet","outputCol":"TweetTokensWithStopWords"},"defaultParamMap":{"outputCol":"Tokenizer_490f81a40aa6__output"}}

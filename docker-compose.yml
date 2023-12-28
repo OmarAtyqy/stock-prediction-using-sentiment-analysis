@@ -9,6 +9,10 @@ services:
       - "7077:7077"
     volumes:
       - .:/mnt
+    environment:
+      - SPARK_MASTER_WEBUI_PORT=8080
+      - SPARK_DRIVER_MEMORY=6g
+      - SPARK_MASTER_LOG_DIR=/mnt/logs
 
   spark-worker-1:
     image: stock-prediction-spark
@@ -18,8 +22,9 @@ services:
     environment:
       SPARK_MODE: worker
       SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_MEMORY: 4g # Increased memory
       SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_LOG_DIR: /mnt/logs
     volumes:
       - .:/mnt
 
@@ -31,8 +36,9 @@ services:
     environment:
       SPARK_MODE: worker
       SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_MEMORY: 4g # Increased memory
       SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_LOG_DIR: /mnt/logs
     volumes:
       - .:/mnt
 

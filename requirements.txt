@@ -1,3 +1,5 @@
 yfinance
 pyspark
 kafka-python
+numpy
+pandas
