@@ -22,8 +22,8 @@ from pyspark.sql.types import DoubleType, StringType, StructType, StructField
 from pyspark.ml.feature import MinMaxScaler, Tokenizer, Word2Vec, VectorAssembler, StopWordsRemover
 from pyspark.ml import Pipeline
 
-from ..utils.tweet_cleaner import CleanTweetTransformer
-from ..utils.column_selector import ColumnSelector
+from ..pipelines.tweet_cleaner import CleanTweetTransformer
+from ..pipelines.column_selector import ColumnSelector
 
 
 # define the target column
@@ -46,7 +46,7 @@ schema = StructType([
 ])
 
 # Define the paths for saving
-pipeline_path = "models/preprocessing_pipeline"
+pipeline_path = "saved_models/preprocessing_pipeline"
 final_data_path = "data/final_data"
 
 # ================================== Creating the Spark session ============================================

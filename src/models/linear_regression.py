@@ -1,21 +1,21 @@
 import os
 from pyspark.ml import PipelineModel
-from .column_selector import ColumnSelector
-from .tweet_cleaner import CleanTweetTransformer
+from ..pipelines.column_selector import ColumnSelector
+from ..pipelines.tweet_cleaner import CleanTweetTransformer
 
 
-class Model:
+class RegressionModel:
     """
     This class is used used as wrapper for the preprocessing pipeline and the model pipeline.
     This class should be callable to run predictions on new data.
     """
 
     def __init__(self, preprocessing_pipeline_path, model_path, features_col='features', target_col="Close", inputCol='Tweet', outputCol='CleanTweet'):
-        if not os.path.exists("models/final_model"):
+        if not os.path.exists("saved_models/final_model"):
             raise Exception(
                 "The model has not been trained yet. Please run the model_training.py script first.")
 
-        if not os.path.exists("models/preprocessing_pipeline"):
+        if not os.path.exists("saved_models/preprocessing_pipeline"):
             raise Exception(
                 "The preprocessing pipeline has not been trained yet. Please run the preprocessing_pipeline.py script first.")
 

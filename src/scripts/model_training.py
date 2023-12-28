@@ -44,7 +44,7 @@ model = pipeline.fit(final_data)
 print("Saving the model...")
 
 # Save the model
-model.save("models/final_model")
+model.save("saved_models/final_model")
 
 # close the Spark session
 spark.stop()
