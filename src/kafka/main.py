@@ -6,7 +6,7 @@ def main():
 
     # check the number of arguments
     if len(sys.argv) < 2:
-        print("Usage: python -m src.kafka.main <stock_name> <interval (optional)>")
+        print("Usage: python3 -m src.kafka.main <stock_name> <interval (optional)>")
         return
 
     # get the stock name
