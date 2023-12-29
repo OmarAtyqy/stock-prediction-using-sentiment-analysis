@@ -3,3 +3,5 @@ pyspark
 kafka-python
 numpy
 pandas
+pymongo[srv]
+python-dotenv

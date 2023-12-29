@@ -3,7 +3,7 @@ REM Stop the current running containers
 docker-compose down
 
 REM Remove dangling images
-docker image prune
+docker image prune -f
 
 REM Build the new image with the updated requirements
 docker build -f Docker/spark/Dockerfile -t stock-prediction-spark .
