@@ -5,10 +5,14 @@
 from pyspark.ml.regression import LinearRegression
 from pyspark.ml import Pipeline
 from pyspark.sql import SparkSession
+import os
 
 
 # data path
-final_data_path = "data/final_data"
+final_data_path = "project_data/final_data"
+
+# model path
+model_path = "saved_models/final_model"
 
 # Specify the target column and features column
 target_col = "Close"
@@ -44,6 +48,9 @@ model = pipeline.fit(final_data)
 print("Saving the model...")
 
 # Save the model
+if os.path.exists(model_path):
+    print("Removing old model...")
+    os.system("rm -rf {}".format(model_path))
 model.save("saved_models/final_model")
 
 # close the Spark session

@@ -16,7 +16,7 @@ import pandas as pd
 
 
 # data path
-final_data_path = "data/final_data"
+final_data_path = "project_data/final_data"
 
 # Specify the target column and features column
 target_col = "Close"
@@ -106,7 +106,7 @@ for model_name, model in models.items():
 print("Saving the results...")
 
 # Save the results
-results_df.to_csv('data/model_selection_results.csv', index=False)
+results_df.to_csv('project_data/model_selection_results.csv', index=False)
 
 # Stop the Spark session
 spark.stop()

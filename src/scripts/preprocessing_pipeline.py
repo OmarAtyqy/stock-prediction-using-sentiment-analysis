@@ -30,7 +30,7 @@ from ..pipelines.column_selector import ColumnSelector
 target_col = 'Close'
 
 # Define the input features
-input_cols = ['Open', 'High', 'Low', 'Volume', 'Adj Close']
+input_cols = ['Open', 'High', 'Low', 'Volume']
 
 # Define the schema for your data
 schema = StructType([
@@ -47,7 +47,7 @@ schema = StructType([
 
 # Define the paths for saving
 pipeline_path = "saved_models/preprocessing_pipeline"
-final_data_path = "data/final_data"
+final_data_path = "project_data/final_data"
 
 # ================================== Creating the Spark session ============================================
 print("Creating the Spark session...")
@@ -61,11 +61,11 @@ spark = SparkSession.builder \
 print("Reading the data...")
 
 # read the data
-df = spark.read.csv("data/joined_data.csv", header=True, schema=schema)
+df = spark.read.csv("project_data/joined_data.csv", header=True, schema=schema)
 print("Number of rows: {}".format(df.count()))
 
-# Drop 'Date' and 'Stock Name' columns and remove rows with null values
-df = df.drop('Date', 'Stock Name')
+# Drop 'Date' and 'Stock Name' and 'Adj Close' columns and remove rows with null values
+df = df.drop('Date', 'Stock Name', 'Adj Close')
 df = df.dropna()
 print("Number of rows after dropping null values: {}".format(df.count()))
 
