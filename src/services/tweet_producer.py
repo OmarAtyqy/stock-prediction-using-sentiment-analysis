@@ -39,20 +39,32 @@ class TweetProducer:
             bootstrap_servers=['localhost:9093'],
             value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
+        
+        self.last_fetched_date = None
+        self.last_fetched_id = None
 
-    def _fetch_data(self, n_records=100):
+    def _fetch_data(self, n_records=500):
         """
-        Fetch n_records from mongodb randomly.
+        Fetch the next n_records from MongoDB in order.
         """
+        query_filter = {"Stock Name": self._stock_name}
+        sort_order = [("Date", 1), ("_id", 1)]
 
-        # fetch n_records from mongodb where "Stock Name" equals self._stock_name
-        cursor = self._collection.aggregate([
-            {"$match": {"Stock Name": self._stock_name}},
-            {"$sample": {"size": n_records}}
-        ])
+        if self.last_fetched_id:
+            query_filter["$or"] = [
+                {"Date": {"$gt": self.last_fetched_date}},
+                {"Date": self.last_fetched_date, "_id": {"$gt": self.last_fetched_id}}
+            ]
 
-        # return the cursor
-        return cursor
+        cursor = self._collection.find(query_filter).sort(sort_order).limit(n_records)
+
+        data = list(cursor)
+        if data:
+            self.last_fetched_date = data[-1]["Date"]
+            self.last_fetched_id = data[-1]["_id"]
+
+        return data
+
 
     def _send_data(self, data):
         """
@@ -61,13 +73,15 @@ class TweetProducer:
         try:
             for record in data:
                 # remove the _id field since it is not serializable
-                del record['_id']
+                if '_id' in record:
+                    del record['_id']
                 self._producer.send(self._topic_name, value=record)
 
             self._producer.flush()
-        finally:
-            # Ensure the cursor is closed properly
-            data.close()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            # Handle the exception as needed
+
 
     def _run(self):
         """
@@ -75,10 +89,11 @@ class TweetProducer:
         """
 
         while True:
-
             # fetch data from mongodb
             print("Fetching data...")
             data = self._fetch_data()
+            
+            print(f"Fetched {data} records")
 
             # send data to kafka topic
             print("Sending data...")

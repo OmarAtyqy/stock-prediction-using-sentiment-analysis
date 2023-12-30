@@ -33,8 +33,7 @@ Run the following command to start the data fetching service:
 
 ```
 docker-compose exec -it kafka bash
-cd /mnt
-python3 -m src.kafka.main <stock_name> <interval (optional)>
+cd /mnt && python3 -m src.kafka.main <stock_name> <interval>
 ```
 
 where `<stock_name>` is the stock symbol you want to fetch data for (make sure that it's available in the database) and `<interval>` is the amount of time to wait in-between data fetching.
@@ -42,17 +41,15 @@ where `<stock_name>` is the stock symbol you want to fetch data for (make sure t
 In another terminal, run the following commands to start the prediction service:
 
 ```
-docker-compose exec -it spark-master bash
-cd /mnt
-python3 -m src.spark.main_pipeline
+docker-compose exec -it dash-app bash
+cd /mnt && python3 -m src.spark.main_dashboard
 ```
 
 In another terminal, run the following commands to start the dashboard service:
 
 ```
 docker-compose exec -it spark-master bash
-cd /mnt
-python3 -m src.spark.main_dashboard
+cd /mnt && python3 -m src.spark.main_pipeline
 ```
 
 ## Dashboard

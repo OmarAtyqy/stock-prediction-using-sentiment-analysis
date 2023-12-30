@@ -12,16 +12,16 @@ class TweetConsumerPredictionProducer:
         """
         self._data_topic_name = "stock-tweets"
         self._prediction_topic_name = "predictions"
+        
 
-        # connect to kafka
         self._consumer = KafkaConsumer(
-            self._data_topic_name,
-            bootstrap_servers=['kafka:9092'],
-            auto_offset_reset='earliest',
-            enable_auto_commit=True,
-            group_id='my-group',
-            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-        )
+        self._data_topic_name,
+        bootstrap_servers=['kafka:9092'],
+        auto_offset_reset='latest',  # Change to latest
+        enable_auto_commit=True,
+        group_id='my-group',
+        value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+    )
 
         # create the kafka producer for predictions
         self._producer = KafkaProducer(
@@ -48,7 +48,6 @@ class TweetConsumerPredictionProducer:
 
             # get the data
             data = message.value
-            print("Received data: ", data)
 
             # create a spark dataframe
             data_df = self._spark.createDataFrame([data])
@@ -60,7 +59,6 @@ class TweetConsumerPredictionProducer:
             data["Prediction"] = prediction.collect()[0]["prediction"]
 
             # send the data to the prediction topic
-            print("Sending prediction...")
             self._producer.send(self._prediction_topic_name, value=data)
 
     def start(self):
