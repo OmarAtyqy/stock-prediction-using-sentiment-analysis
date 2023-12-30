@@ -41,15 +41,15 @@ where `<stock_name>` is the stock symbol you want to fetch data for (make sure t
 In another terminal, run the following commands to start the prediction service:
 
 ```
-docker-compose exec -it dash-app bash
-cd /mnt && python3 -m src.spark.main_dashboard
+docker-compose exec -it spark-master bash
+cd /mnt && python3 -m src.spark.main_pipeline
 ```
 
 In another terminal, run the following commands to start the dashboard service:
 
 ```
-docker-compose exec -it spark-master bash
-cd /mnt && python3 -m src.spark.main_pipeline
+docker-compose exec -it dash-app bash
+cd /mnt && python3 -m src.spark.main_dashboard
 ```
 
 ## Dashboard
