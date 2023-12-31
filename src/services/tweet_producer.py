@@ -5,6 +5,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from time import sleep
 from dotenv import load_dotenv
+import random
 
 
 class TweetProducer:
@@ -17,7 +18,7 @@ class TweetProducer:
         self._topic_name = "stock-tweets"
         self._stock_name = stock_name
         if interval is None:
-            self._interval = 10
+            self._interval = 5
         else:
             self._interval = interval
 
@@ -43,27 +44,33 @@ class TweetProducer:
         self.last_fetched_date = None
         self.last_fetched_id = None
 
-    def _fetch_data(self, n_records=500):
+    def _fetch_data(self):
         """
-        Fetch the next n_records from MongoDB in order.
+        Fetch the next n_records from MongoDB starting from the most recent date.
         """
+        n_records = random.randint(80, 100)
+        
         query_filter = {"Stock Name": self._stock_name}
-        sort_order = [("Date", 1), ("_id", 1)]
+        sort_order = [("Date", -1), ("_id", -1)]  # Sorting in descending order
 
         if self.last_fetched_id:
             query_filter["$or"] = [
-                {"Date": {"$gt": self.last_fetched_date}},
-                {"Date": self.last_fetched_date, "_id": {"$gt": self.last_fetched_id}}
+                {"Date": {"$lt": self.last_fetched_date}},
+                {"Date": self.last_fetched_date, "_id": {"$lt": self.last_fetched_id}}
             ]
 
         cursor = self._collection.find(query_filter).sort(sort_order).limit(n_records)
 
         data = list(cursor)
+        # Reverse the data list to process older records first
+        data = data[::-1]
+
         if data:
-            self.last_fetched_date = data[-1]["Date"]
-            self.last_fetched_id = data[-1]["_id"]
+            self.last_fetched_date = data[0]["Date"]  # The oldest date in this batch
+            self.last_fetched_id = data[0]["_id"]  # The oldest ID in this batch
 
         return data
+
 
 
     def _send_data(self, data):
@@ -93,7 +100,7 @@ class TweetProducer:
             print("Fetching data...")
             data = self._fetch_data()
             
-            print(f"Fetched {data} records")
+            print(f"Fetched {len(data)} records")
 
             # send data to kafka topic
             print("Sending data...")

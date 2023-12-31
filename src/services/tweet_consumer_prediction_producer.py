@@ -2,6 +2,7 @@ from kafka import KafkaConsumer, KafkaProducer
 import json
 from pyspark.sql import SparkSession
 from ..models.linear_regression import RegressionModel
+import time
 
 
 class TweetConsumerPredictionProducer:
@@ -19,7 +20,7 @@ class TweetConsumerPredictionProducer:
         bootstrap_servers=['kafka:9092'],
         auto_offset_reset='latest',  # Change to latest
         enable_auto_commit=True,
-        group_id='my-group',
+        group_id='group',
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )
 
@@ -44,22 +45,30 @@ class TweetConsumerPredictionProducer:
         """
         Run the consumer.
         """
-        for message in self._consumer:
 
-            # get the data
-            data = message.value
+        while True:
+            messages = self._consumer.poll(timeout_ms=1000)  # Poll for 1 second
+            for topic_partition, msg_list in messages.items():
+                for message in msg_list:
+                    # get the data
+                    data = message.value
 
-            # create a spark dataframe
-            data_df = self._spark.createDataFrame([data])
+                    # create a spark dataframe
+                    data_df = self._spark.createDataFrame([data])
 
-            # make prediction
-            prediction = self._model(data_df)
+                    # make prediction
+                    prediction = self._model(data_df)
 
-            # add the prediction to the data
-            data["Prediction"] = prediction.collect()[0]["prediction"]
+                    # add the prediction to the data
+                    data["Prediction"] = prediction.collect()[0]["prediction"]
 
-            # send the data to the prediction topic
-            self._producer.send(self._prediction_topic_name, value=data)
+                    print("Sending prediction:", data)
+
+                    # send the data to the prediction topic
+                    self._producer.send(self._prediction_topic_name, value=data)
+
+            # Sleep for a short duration to avoid constant polling
+            time.sleep(1)
 
     def start(self):
         """
