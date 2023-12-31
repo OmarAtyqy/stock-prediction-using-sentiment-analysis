@@ -1,7 +1,7 @@
 import os
 from pyspark.ml import PipelineModel
-from ..pipelines.column_selector import ColumnSelector
-from ..pipelines.tweet_cleaner import CleanTweetTransformer
+from ..custom_pipelines.column_selector import ColumnSelector
+from ..custom_pipelines.tweet_cleaner import CleanTweetTransformer
 
 
 class RegressionModel:
