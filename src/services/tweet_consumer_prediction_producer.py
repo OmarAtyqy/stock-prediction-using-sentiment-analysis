@@ -13,16 +13,15 @@ class TweetConsumerPredictionProducer:
         """
         self._data_topic_name = "stock-tweets"
         self._prediction_topic_name = "predictions"
-        
 
         self._consumer = KafkaConsumer(
-        self._data_topic_name,
-        bootstrap_servers=['kafka:9092'],
-        auto_offset_reset='latest',  # Change to latest
-        enable_auto_commit=True,
-        group_id='group',
-        value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-    )
+            self._data_topic_name,
+            bootstrap_servers=['kafka:9092'],
+            auto_offset_reset='latest',  # Change to latest
+            enable_auto_commit=True,
+            group_id='group',
+            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+        )
 
         # create the kafka producer for predictions
         self._producer = KafkaProducer(
@@ -47,7 +46,8 @@ class TweetConsumerPredictionProducer:
         """
 
         while True:
-            messages = self._consumer.poll(timeout_ms=1000)  # Poll for 1 second
+            messages = self._consumer.poll(
+                timeout_ms=1000)  # Poll for 1 second
             for topic_partition, msg_list in messages.items():
                 for message in msg_list:
                     # get the data
@@ -65,7 +65,8 @@ class TweetConsumerPredictionProducer:
                     print("Sending prediction:", data)
 
                     # send the data to the prediction topic
-                    self._producer.send(self._prediction_topic_name, value=data)
+                    self._producer.send(
+                        self._prediction_topic_name, value=data)
 
             # Sleep for a short duration to avoid constant polling
             time.sleep(1)

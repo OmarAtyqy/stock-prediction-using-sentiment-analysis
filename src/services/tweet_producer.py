@@ -40,7 +40,7 @@ class TweetProducer:
             bootstrap_servers=['localhost:9093'],
             value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
-        
+
         self.last_fetched_date = None
         self.last_fetched_id = None
 
@@ -49,29 +49,31 @@ class TweetProducer:
         Fetch the next n_records from MongoDB starting from the most recent date.
         """
         n_records = random.randint(80, 100)
-        
+
         query_filter = {"Stock Name": self._stock_name}
         sort_order = [("Date", -1), ("_id", -1)]  # Sorting in descending order
 
         if self.last_fetched_id:
             query_filter["$or"] = [
                 {"Date": {"$lt": self.last_fetched_date}},
-                {"Date": self.last_fetched_date, "_id": {"$lt": self.last_fetched_id}}
+                {"Date": self.last_fetched_date, "_id": {
+                    "$lt": self.last_fetched_id}}
             ]
 
-        cursor = self._collection.find(query_filter).sort(sort_order).limit(n_records)
+        cursor = self._collection.find(query_filter).sort(
+            sort_order).limit(n_records)
 
         data = list(cursor)
         # Reverse the data list to process older records first
         data = data[::-1]
 
         if data:
-            self.last_fetched_date = data[0]["Date"]  # The oldest date in this batch
-            self.last_fetched_id = data[0]["_id"]  # The oldest ID in this batch
+            # The oldest date in this batch
+            self.last_fetched_date = data[0]["Date"]
+            # The oldest ID in this batch
+            self.last_fetched_id = data[0]["_id"]
 
         return data
-
-
 
     def _send_data(self, data):
         """
@@ -89,7 +91,6 @@ class TweetProducer:
             print(f"An error occurred: {e}")
             # Handle the exception as needed
 
-
     def _run(self):
         """
         Run the producer.
@@ -99,7 +100,7 @@ class TweetProducer:
             # fetch data from mongodb
             print("Fetching data...")
             data = self._fetch_data()
-            
+
             print(f"Fetched {len(data)} records")
 
             # send data to kafka topic
