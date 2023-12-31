@@ -5,6 +5,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from time import sleep
 from dotenv import load_dotenv
+import random
 
 
 class TweetProducer:
@@ -17,7 +18,7 @@ class TweetProducer:
         self._topic_name = "stock-tweets"
         self._stock_name = stock_name
         if interval is None:
-            self._interval = 10
+            self._interval = 5
         else:
             self._interval = interval
 
@@ -39,20 +40,38 @@ class TweetProducer:
             bootstrap_servers=['localhost:9093'],
             value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
+        
+        self.last_fetched_date = None
+        self.last_fetched_id = None
 
-    def _fetch_data(self, n_records=100):
+    def _fetch_data(self):
         """
-        Fetch n_records from mongodb randomly.
+        Fetch the next n_records from MongoDB starting from the most recent date.
         """
+        n_records = random.randint(80, 100)
+        
+        query_filter = {"Stock Name": self._stock_name}
+        sort_order = [("Date", -1), ("_id", -1)]  # Sorting in descending order
 
-        # fetch n_records from mongodb where "Stock Name" equals self._stock_name
-        cursor = self._collection.aggregate([
-            {"$match": {"Stock Name": self._stock_name}},
-            {"$sample": {"size": n_records}}
-        ])
+        if self.last_fetched_id:
+            query_filter["$or"] = [
+                {"Date": {"$lt": self.last_fetched_date}},
+                {"Date": self.last_fetched_date, "_id": {"$lt": self.last_fetched_id}}
+            ]
 
-        # return the cursor
-        return cursor
+        cursor = self._collection.find(query_filter).sort(sort_order).limit(n_records)
+
+        data = list(cursor)
+        # Reverse the data list to process older records first
+        data = data[::-1]
+
+        if data:
+            self.last_fetched_date = data[0]["Date"]  # The oldest date in this batch
+            self.last_fetched_id = data[0]["_id"]  # The oldest ID in this batch
+
+        return data
+
+
 
     def _send_data(self, data):
         """
@@ -61,13 +80,15 @@ class TweetProducer:
         try:
             for record in data:
                 # remove the _id field since it is not serializable
-                del record['_id']
+                if '_id' in record:
+                    del record['_id']
                 self._producer.send(self._topic_name, value=record)
 
             self._producer.flush()
-        finally:
-            # Ensure the cursor is closed properly
-            data.close()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            # Handle the exception as needed
+
 
     def _run(self):
         """
@@ -75,10 +96,11 @@ class TweetProducer:
         """
 
         while True:
-
             # fetch data from mongodb
             print("Fetching data...")
             data = self._fetch_data()
+            
+            print(f"Fetched {len(data)} records")
 
             # send data to kafka topic
             print("Sending data...")

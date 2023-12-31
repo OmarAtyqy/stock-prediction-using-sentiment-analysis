@@ -29,32 +29,25 @@ Run the `./build.sh` script
 
 ## Running the services
 
-Run the following command to start the data fetching service:
+run the following commands to start the dashboard service:
 
 ```
-docker-compose exec -it kafka bash
-cd /mnt
-python3 -m src.kafka.main <stock_name> <interval (optional)>
+docker-compose exec -it dash-app bash
+cd /mnt && python3 -m src.dashboard.main_dashboard
 ```
-
-where `<stock_name>` is the stock symbol you want to fetch data for (make sure that it's available in the database) and `<interval>` is the amount of time to wait in-between data fetching.
 
 In another terminal, run the following commands to start the prediction service:
 
 ```
 docker-compose exec -it spark-master bash
-cd /mnt
-python3 -m src.spark.main_pipeline
+cd /mnt && python3 -m src.spark.main_pipeline
 ```
 
-In another terminal, run the following commands to start the dashboard service:
+In another terminal, run the following command to start the data fetching service:
 
 ```
-docker-compose exec -it spark-master bash
-cd /mnt
-python3 -m src.spark.main_dashboard
+docker-compose exec -it kafka bash
+cd /mnt && python3 -m src.kafka.main <stock_name> <interval>
 ```
 
-## Dashboard
-
-...
+where `<stock_name>` is the stock symbol you want to fetch data for (make sure that it's available in the database) and `<interval>` is the amount of time to wait in-between data fetching.
