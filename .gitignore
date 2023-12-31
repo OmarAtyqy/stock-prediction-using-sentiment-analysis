@@ -1,11 +1,8 @@
-# data folder
-data/
+# data folder at the root of the project only
+project_data/
 
 # temp folder
 temp/
-
-
-
 
 # =============================================================================
 
