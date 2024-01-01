@@ -27,27 +27,49 @@ Run the `./build.bat` script
 
 Run the `./build.sh` script
 
-## Running the services
+## Running the Services
 
-run the following commands to start the dashboard service:
+To start the various services of the project, you can either manually run each service or use the provided scripts for convenience.
 
+### Manual Startup
+
+1. **Dashboard Service**:
+   ```bash
+   docker-compose exec -it dash-app bash
+   cd /mnt && python3 -m src.dashboard.main_dashboard
+   ```
+
+2. **Prediction Service**:
+   ```bash
+   docker-compose exec -it spark-master bash
+   cd /mnt && python3 -m src.spark.main_pipeline
+   ```
+
+3. **Data Fetching Service**:
+   ```bash
+   docker-compose exec -it kafka bash
+   cd /mnt && python3 -m src.kafka.main <stock_name> <interval>
+   ```
+   Replace `<stock_name>` with the desired stock symbol and `<interval>` with the data fetching interval.
+
+### Automated Startup
+
+Alternatively, you can use the provided scripts to start all services simultaneously:
+
+#### For Windows Users:
+
+Run the `run.bat` script:
+
+```bash
+./run.bat <stock_name> <interval>
 ```
-docker-compose exec -it dash-app bash
-cd /mnt && python3 -m src.dashboard.main_dashboard
+
+#### For Unix-based System Users:
+
+Run the `run.sh` script:
+
+```bash
+./run.sh <stock_name> <interval>
 ```
 
-In another terminal, run the following commands to start the prediction service:
-
-```
-docker-compose exec -it spark-master bash
-cd /mnt && python3 -m src.spark.main_pipeline
-```
-
-In another terminal, run the following command to start the data fetching service:
-
-```
-docker-compose exec -it kafka bash
-cd /mnt && python3 -m src.kafka.main <stock_name> <interval>
-```
-
-where `<stock_name>` is the stock symbol you want to fetch data for (make sure that it's available in the database) and `<interval>` is the amount of time to wait in-between data fetching.
+In both scripts, replace `<stock_name>` with the stock symbol and `<interval>` with the data fetching interval.
