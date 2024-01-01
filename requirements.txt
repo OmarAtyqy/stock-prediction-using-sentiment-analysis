@@ -1,0 +1,9 @@
+pyspark
+kafka-python
+numpy
+pandas
+pymongo[srv]
+python-dotenv
+dash 
+dash-core-components 
+dash-html-components
