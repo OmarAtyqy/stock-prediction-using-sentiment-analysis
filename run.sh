@@ -11,11 +11,11 @@ INTERVAL=$2
 
 # Start the dashboard service in the background
 docker-compose exec -d dash-app bash -c "cd /mnt && python3 -m src.dashboard.main_dashboard" &
-sleep 10
+sleep 5
 
 # Start the prediction service in the background
 docker-compose exec -d spark-master bash -c "cd /mnt && python3 -m src.spark.main_pipeline" &
-sleep 10
+sleep 5
 
 # Start the data fetching service
 docker-compose exec -it kafka bash -c "cd /mnt && python3 -m src.kafka.main $STOCK_NAME $INTERVAL"

@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, callback_context
+from dash import dcc, html, callback_context, dash_table
 from dash.dependencies import Output, Input, State
 from plotly.subplots import make_subplots
 import pandas as pd
@@ -14,7 +14,7 @@ import plotly.express as px
 
 class PredictionConsumerWithDashboard:
     def __init__(self):
-        self.interval = 5  
+        self.interval = 2
         self._data_topic_name = "stock-tweets"
         self._prediction_topic_name = "predictions"
         
@@ -48,155 +48,86 @@ class PredictionConsumerWithDashboard:
 
     def enhance_app_layout(self):
         # Styles
-        style_center_vertically = {'display': 'flex', 'alignItems': 'center'}
-        style_counter_container = {'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'height': '100%'}
-        style_card = {
-            'background': '#f2f2ed', 'borderRadius': '5px', 'boxShadow': '2px 2px 2px lightgrey',
-            'padding': '15px', 'margin': '10px'
-        }
         beige_background = {'backgroundColor': '#e3e3de', 'padding': '20px', 'borderRadius': '5px'}
-        style_counter = {
-            'border': '2px solid #4CAF50',
-            'borderRadius': '50%',  # Makes the div circular
-            'color': '#4CAF50',
-            'fontSize': '36px',  # Larger font size
-            'fontWeight': 'bold',
-            'width': '120px',  # Width of the circle
-            'height': '120px',  # Height of the circle
-            'textAlign': 'center',
-            'lineHeight': '120px',  # Centers text vertically
-            'margin': '0 auto'
-        }
+        style_card = {'background': '#f2f2ed', 'borderRadius': '5px', 'boxShadow': '2px 2px 2px lightgrey', 'padding': '15px', 'margin': '10px'}
+        style_counter = {'border': '2px solid #4CAF50', 'borderRadius': '50%', 'color': '#4CAF50', 'fontSize': '36px', 'fontWeight': 'bold', 'width': '120px', 'height': '120px', 'textAlign': 'center', 'lineHeight': '120px', 'margin': '0 auto'}
+        style_counter_container = {'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'height': '100%', 'marginRight': '20px'}
         style_counter_title = {'textAlign': 'center', 'fontWeight': 'bold', 'color': '#333'}
 
-        # Layout
+        # Dashboard layout
         self.app.layout = html.Div([
             html.H1("Real-Time Stock Prediction Dashboard", style={'textAlign': 'center', 'color': '#333', 'marginBottom': '40px'}),
-            
-            # First row with Histogram and counters
-            html.Div([
-                html.Div([
-                    dcc.Graph(id='stock-metrics-histogram', style={'height': '400px'}),
-                ], style={'flex': '2', **style_card}),
-                
-                # Counter displays with titles
-                html.Div([
-                    html.Div([
-                        html.H4("Tweets Scrapped", style=style_counter_title),
-                        html.Div(id='tweets-scrapped-display', style=style_counter),
-                    ], style={'marginRight': '20px', **style_counter_container}),  # Add right margin to the first counter
-                    html.Div([
-                        html.H4("Prediction", style=style_counter_title),
-                        html.Div(id='mean-prediction-display', style=style_counter),
-                    ], style=style_counter_container),
-                ], style={'flex': '1', 'display': 'flex', 'justifyContent': 'space-evenly'}),
-
-            ], style={'display': 'flex', **beige_background}),
-
-            # Second row with Sentiment Analysis and Latest Tweets Display
-            html.Div([
-                html.Div([
-                    dcc.Graph(id='sentiment-analysis-graph'),
-                ], style={'flex': '1', 'padding': '0 20px', **style_card}),
-                
-                html.Div([
-                    html.H4("Latest Tweets", style={'textAlign': 'center'}),
-                    html.Div(id='latest-tweets-display', style={
-                        'overflowY': 'scroll',
-                        'maxHeight': '400px',
-                        'border': '1px solid #dcdcdc',
-                        'borderRadius': '5px',
-                        'marginTop': '10px',
-                        'padding': '10px',
-                        'backgroundColor': 'white'
-                    }),
-                ], style={'flex': '1', 'padding': '0 20px', **style_card})
-
-            ], style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'space-around', **beige_background}),
-            
+            self.create_counters_row(style_card, style_counter, style_counter_title, style_counter_container, beige_background),
+            self.create_analysis_row(style_card, beige_background),
             dcc.Interval(id='interval-component', interval=self.interval * 1000, n_intervals=0)
         ])
-
-
+        
         @self.app.callback(
             [Output('sentiment-analysis-graph', 'figure'),
             Output('latest-tweets-display', 'children'),
-            Output('stock-metrics-histogram', 'figure'),
             Output('tweets-scrapped-display', 'children'),
-            Output('mean-prediction-display', 'children')],
+            Output('mean-prediction-display', 'children'),
+            Output('open-display', 'children'),
+            Output('low-display', 'children'),
+            Output('high-display', 'children'),
+            Output('volume-display', 'children')],
             [Input('interval-component', 'n_intervals')])
         def update_content(n):
-            # Sentiment Analysis Graph
-            sentiment_counts = self.data['Sentiment'].value_counts()
-            sentiment_colors = {'Positive': 'green', 'Negative': 'red', 'Neutral': 'blue'}
-            sentiment_fig = px.bar(sentiment_counts, 
-                                labels={'index': 'Sentiment', 'value': 'Count'},
-                                color=sentiment_counts.index.map(sentiment_colors))
-            sentiment_fig.update_layout(
-                title={
-                    'text': 'Tweet Sentiment Analysis',
-                    'y':0.95,
-                    'x':0.5,
-                    'xanchor': 'center',
-                    'yanchor': 'top'
-                }
-            )
+            # Update logic for each component
+            sentiment_fig = self.create_sentiment_analysis_figure()
+            latest_tweets_display = self.create_latest_tweets_display()
+            tweets_scrapped_display = self.create_display_value(len(self.data), style_counter)
+            mean_prediction_display = self.create_display_value(round(self.data['Prediction'].mean(), 2) if len(self.data[self.data['Prediction'].notnull()]) > 0 else 0, style_counter)
+            open_display = self.create_display_value(round(self.data['Open'].values[0], 2) if len(self.data) > 0 else 0, style_counter)
+            low_display = self.create_display_value(round(self.data['Low'].min(), 2) if len(self.data) > 0 else 0, style_counter)
+            high_display = self.create_display_value(round(self.data['High'].max(), 2) if len(self.data) > 0 else 0, style_counter)
+            volume_display = self.create_display_value(round(self.data['Volume'].max() / 1_000_000, 2) if len(self.data) > 0 else 0, style_counter)
 
-            # Latest Tweets Display
-            latest_tweets = self.data['Tweet'].tail(10)  # Adjust number as needed
-            latest_tweets_display = html.Ul([html.Li(tweet) for tweet in latest_tweets])
+            return sentiment_fig, latest_tweets_display, tweets_scrapped_display, mean_prediction_display, open_display, low_display, high_display, volume_display
 
-            # Stock Metrics Histogram
-            stock_metric_columns = ['Low', 'High', 'Open', 'Close', 'Volume']
-            histogram_fig = make_subplots(rows=2, cols=3, subplot_titles=stock_metric_columns)
-            for i, column in enumerate(stock_metric_columns):
-                histogram_fig.add_trace(go.Histogram(x=self.data[column], name=column), row=(i // 3) + 1, col=(i % 3) + 1)
-                
-            histogram_fig.update_layout(
-                title={
-                    'text': 'Stock Metrics Histogram',
-                    'y':0.95,
-                    'x':0.5,
-                    'xanchor': 'center',
-                    'yanchor': 'top'
-                },
-                showlegend=False
-            )
+    def create_counters_row(self, style_card, style_counter, style_counter_title, style_counter_container, beige_background):
+        # Use `justifyContent: 'space-around'` to give space around each item
+        # or `justifyContent: 'space-between'` to create equal space between the items.
+        counters_style = {'display': 'flex', 'justifyContent': 'space-around', **beige_background}
+        return html.Div([
+            self.create_counter("Tweets Scrapped", 'tweets-scrapped-display', style_counter, style_counter_title, style_counter_container),
+            self.create_counter("Open", 'open-display', style_counter, style_counter_title, style_counter_container),
+            self.create_counter("Low", 'low-display', style_counter, style_counter_title, style_counter_container),
+            self.create_counter("High", 'high-display', style_counter, style_counter_title, style_counter_container),
+            self.create_counter("Volume", 'volume-display', style_counter, style_counter_title, style_counter_container),
+            self.create_counter("Prediction", 'mean-prediction-display', style_counter, style_counter_title, style_counter_container)
+        ], style=counters_style)
 
-            # Tweets Scrapped Display with circular and centered styling
-            tweets_scrapped_display = html.Div(
-                html.Div(f"{len(self.data):,}", style={
-                    'border': '2px solid #4CAF50',
-                    'borderRadius': '50%',  # Makes the div circular
-                    'color': '#4CAF50',
-                    'fontSize': '36px',  # Larger font size
-                    'fontWeight': 'bold',
-                    'width': '120px',  # Width of the circle
-                    'height': '120px',  # Height of the circle
-                    'textAlign': 'center',
-                    'lineHeight': '120px',  # Centers text vertically
-                }),
-                style={'margin': '0 auto', 'width': 'fit-content'}
-            )
 
-            # Mean Prediction Display with circular and centered styling
-            mean_prediction = self.data['Prediction'].mean() if len(self.data[self.data['Prediction'].notnull()]) > 0 else 0
-            mean_prediction_display = html.Div(
-                html.Div(f"{mean_prediction:.2f}", style={
-                    'border': '2px solid #4CAF50',
-                    'borderRadius': '50%',  # Makes the div circular
-                    'color': '#4CAF50',
-                    'fontSize': '36px',  # Larger font size
-                    'fontWeight': 'bold',
-                    'width': '120px',  # Width of the circle
-                    'height': '120px',  # Height of the circle
-                    'textAlign': 'center',
-                    'lineHeight': '120px',  # Centers text vertically
-                }),
-                style={'margin': '0 auto', 'width': 'fit-content'}
-            )
+    def create_analysis_row(self, style_card, beige_background):
+        return html.Div([
+            html.Div([dcc.Graph(id='sentiment-analysis-graph')], style={'flex': '1', 'padding': '0 20px', **style_card}),
+            html.Div([
+                html.H4("Latest Tweets", style={'textAlign': 'center'}),
+                html.Div(id='latest-tweets-display', style={
+                    'overflowY': 'scroll', 'maxHeight': '400px', 'border': '1px solid #dcdcdc', 'borderRadius': '5px', 'marginTop': '10px', 'padding': '10px', 'backgroundColor': 'white'
+                })
+            ], style={'flex': '1', 'padding': '0 20px', **style_card})
+        ], style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'space-around', **beige_background})
 
-            return sentiment_fig, latest_tweets_display, histogram_fig, tweets_scrapped_display, mean_prediction_display
+    def create_counter(self, title, id, style_counter, style_counter_title, style_counter_container):
+        return html.Div([
+            html.Div([html.H4(title, style=style_counter_title), html.Div(id=id, style=style_counter)], style=style_counter_container)
+        ])
+
+    def create_sentiment_analysis_figure(self):
+        sentiment_counts = self.data['Sentiment'].value_counts()
+        sentiment_colors = {'Positive': 'green', 'Negative': 'red', 'Neutral': 'blue'}
+        sentiment_fig = px.bar(sentiment_counts, labels={'index': 'Sentiment', 'value': 'Count'}, color=sentiment_counts.index.map(sentiment_colors))
+        sentiment_fig.update_layout(title={'text': 'Tweet Sentiment Analysis', 'y':0.95, 'x':0.5, 'xanchor': 'center', 'yanchor': 'top'})
+        return sentiment_fig
+
+    def create_latest_tweets_display(self):
+        latest_tweets = self.data['Tweet'].tail(10)
+        return html.Ul([html.Li(tweet) for tweet in latest_tweets])
+
+    def create_display_value(self, value, style_counter):
+        return html.Div(html.Div(f"{value}", style=style_counter), style={'margin': '0 auto', 'width': 'fit-content'})
 
 
     def _fetch_tweet_data(self):
